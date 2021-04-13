@@ -14,12 +14,16 @@ Option Explicit
 ' - Relasjoner changed to Roller, show only ends with role names (and navigable ?)
 ' TBD: show navigable 
 ' TBD: show association type 
+' TBD: output operations and constraints right after attributes and roles
 ' - tagged values on CodeList classes, empty tags suppressed (suppress only those from the standard profile?), heading?
 ' - simpler list for codelists with more than 1 code, three-column list when Defaults are used (Utvekslingsalias)
 ' TBD: codes with tagged values
-' TBD: stereotype on attribute "Type"
-' TBD: info on associations (if present)
-' TBD: constraints
+' TBD: show stereotype on attribute "Type" if present
+' TBD: output info on associations if present
+' TBD: zzzzzz
+' TBD: if tV SOSI_bildeAvModellelement (på pakker og klasser) -> Session.Output("image::"& tV &".png["& tV &"]")
+
+' TBD: special handling of classes that have tV with names like FKB-A etc. and are subtypes of feature types
 
 ' Project Browser Script main function
 Sub OnProjectBrowserScript()
@@ -30,6 +34,8 @@ Sub OnProjectBrowserScript()
     Select Case treeSelectedType
 
         Case otPackage
+			Repository.EnsureOutputVisible "Script"
+			Repository.ClearOutput "Script"
             ' Code for when a package is selected
             Dim thePackage As EA.Package
 			set thePackage = Repository.GetTreeSelectedObject()
@@ -52,8 +58,6 @@ Dim projectclass As EA.Project
 set projectclass = Repository.GetProjectInterface()
 Dim diagCounter
 diagCounter = 0
-	Repository.EnsureOutputVisible "Script"
-	Repository.ClearOutput "Script"
 	
 Session.Output("=== "&thePackage.Name&"")
 Session.Output("Definisjon: "&thePackage.Notes&"")
