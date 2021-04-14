@@ -6,10 +6,11 @@ Option Explicit
 ' Author: Tore Johnsen, Åsmund Tjora
 ' Purpose: Generate documentation in AsciiDoc syntax
 ' Date: 08.04.2021
-' Date: 2021-04-09 Kent Jonsrud:
+' Date: 2021-04-09/14 Kent Jonsrud:
 ' - tagged value lists come right after definition, on packages and classes
 ' - "Spesialisering av" changed to Supertype, no list of subtypes shown
 ' - removed formatting in notes, except CRLF
+' - show stereotype on attribute "Type" if present
 ' - roles shall have same simple look and structure as attributes
 ' - Relasjoner changed to Roller, show only ends with role names (and navigable ?)
 ' TBD: show navigable 
@@ -18,7 +19,6 @@ Option Explicit
 ' - tagged values on CodeList classes, empty tags suppressed (suppress only those from the standard profile?), heading?
 ' - simpler list for codelists with more than 1 code, three-column list when Defaults are used (Utvekslingsalias)
 ' TBD: codes with tagged values
-' TBD: show stereotype on attribute "Type" if present
 ' TBD: output info on associations if present
 ' TBD: zzzzzz
 ' TBD: if tV SOSI_bildeAvModellelement (på pakker og klasser) -> Session.Output("image::"& tV &".png["& tV &"]")
@@ -200,7 +200,11 @@ if element.Attributes.Count > 0 then
 			Session.Output(" ")
 		end if
 		Session.Output("|Type: ")
-		Session.Output("|"&att.Type&"")			
+		if att.ClassifierID <> 0 then
+			Session.Output("|«" & Repository.GetElementByID(att.ClassifierID).Stereotype & "» "&att.Type&"")		
+		else
+			Session.Output("|"&att.Type&"")
+		end if
 
 		if att.TaggedValues.Count > 0 then
 			Session.Output("|Tagged Values: ")
