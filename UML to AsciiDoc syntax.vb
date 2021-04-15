@@ -6,6 +6,8 @@ Option Explicit
 ' Author: Tore Johnsen, Åsmund Tjora
 ' Purpose: Generate documentation in AsciiDoc syntax
 ' Date: 08.04.2021
+' Date: 2021-04-15 Kent Jonsrud:
+' - diagrammer legges i underkatalog med navn enten verdien i tagged value SOSI_kortnavn eller img
 ' Date: 2021-04-09/14 Kent Jonsrud:
 ' - tagged value lists come right after definition, on packages and classes
 ' - "Spesialisering av" changed to Supertype, no list of subtypes shown
@@ -25,6 +27,12 @@ Option Explicit
 
 ' TBD: special handling of classes that have tV with names like FKB-A etc. and are subtypes of feature types
 
+' TBD: write adoc and diagram files to a subfolder, ensure utf-8 in adoc (no &#229)
+'		==== «dataType» Matrikkelenhetreferanse
+'		Definisjon: Mulighet for &#229; koble matrikkelenhet til objekt i SSR for &#229; oppdatere bruksnavn i matrikkelen.
+
+'
+'
 ' Project Browser Script main function
 Sub OnProjectBrowserScript()
 
@@ -51,6 +59,8 @@ End Sub
 
 
 Sub ListAsciiDoc(thePackage)
+Dim imgFSO
+Dim imgfolder, imgparent
 Dim element As EA.Element
 dim tag as EA.TaggedValue
 Dim diag As EA.Diagram
@@ -58,6 +68,7 @@ Dim projectclass As EA.Project
 set projectclass = Repository.GetProjectInterface()
 Dim diagCounter
 diagCounter = 0
+imgfolder ="img"
 	
 Session.Output("=== "&thePackage.Name&"")
 Session.Output("Definisjon: "&thePackage.Notes&"")
@@ -75,14 +86,35 @@ if thePackage.element.TaggedValues.Count > 0 then
 			Session.Output("|"&tag.Value&"")
 			Session.Output(" ")				
 		end if
+		if tag.Name = "SOSI_kortnavn" then	
+			imgfolder = tag.Value
+		end if
 	next
 
 	Session.Output("|===")
 end if
 '-----------------Diagram-----------------
+	Set imgFSO=CreateObject("Scripting.FileSystemObject")
+	imgparent = imgFSO.GetParentFolderName(Repository.ConnectionString())  & "\" & imgfolder
+	if true then				
+		Session.Output(" DEBUG.")
+		Session.Output(" imgfolder: " & imgfolder  & "...")
+		Session.Output(" imgFSO.GetAbsolutePathName: " & imgFSO.GetAbsolutePathName("./")  & "...")
+		Session.Output(" Repository.ConnectionString: " & Repository.ConnectionString() & "...")
+		Session.Output(" imgFSO.GetBaseName: " & imgFSO.GetBaseName(Repository.ConnectionString())  & "...")
+		Session.Output(" imgFSO.GetParentFolderName: " & imgFSO.GetParentFolderName(Repository.ConnectionString())  & "...")
+		Session.Output(" imgparent: " & imgparent  & "...")
+	end if
+	if not imgFSO.FolderExists(imgparent) then
+		imgFSO.CreateFolder imgparent
+	end if
+
+
+
 For Each diag In thePackage.Diagrams
 	diagCounter = diagCounter + 1
-	Call projectclass.PutDiagramImageToFile(diag.DiagramGUID, "" & diag.Name&".png", 1)
+	Call projectclass.PutDiagramImageToFile(diag.DiagramGUID, imgparent & "\" & diag.Name & ".png", 1)
+'	Call projectclass.PutDiagramImageToFile(diag.DiagramGUID, "" & diag.Name&".png", 1)
 	Repository.CloseDiagram(diag.DiagramID)
 	Session.Output("[caption=""Figur "&diagCounter&": "",title="&diag.Name&"]")
 	Session.Output("image::"&diag.Name&".png["&diag.Name&"]")
@@ -122,6 +154,8 @@ dim pack as EA.Package
 for each pack in thePackage.Packages
 	Call ListAsciiDoc(pack)
 next
+
+Set imgFSO = Nothing
 end sub
 
 '-----------------ObjektOgDatatyper-----------------
