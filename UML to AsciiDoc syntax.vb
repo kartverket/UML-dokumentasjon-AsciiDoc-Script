@@ -6,8 +6,13 @@ Option Explicit
 ' Author: Tore Johnsen, Åsmund Tjora
 ' Purpose: Generate documentation in AsciiDoc syntax
 ' Date: 08.04.2021
+'
+' Version: 0.2
+' Date: 2021-04-16 Kent Jonsrud:
+' - tagged value SOSI_bildeAvModellelement på pakker og klasser: verdien vises som ekstern sti til bilde
 ' Date: 2021-04-15 Kent Jonsrud:
 ' - diagrammer legges i underkatalog med navn enten verdien i tagged value SOSI_kortnavn eller img
+' TBD: sette inn blanke i diagrammnavn for enklere_filnavn.png ?
 ' Date: 2021-04-09/14 Kent Jonsrud:
 ' - tagged value lists come right after definition, on packages and classes
 ' - "Spesialisering av" changed to Supertype, no list of subtypes shown
@@ -15,23 +20,24 @@ Option Explicit
 ' - show stereotype on attribute "Type" if present
 ' - roles shall have same simple look and structure as attributes
 ' - Relasjoner changed to Roller, show only ends with role names (and navigable ?)
+' - tagged values on CodeList classes, empty tags suppressed (suppress only those from the standard profile?), heading?
+' - simpler list for codelists with more than 1 code, three-column list when Defaults are used (Utvekslingsalias)
 ' TBD: show navigable 
 ' TBD: show association type 
 ' TBD: output operations and constraints right after attributes and roles
-' - tagged values on CodeList classes, empty tags suppressed (suppress only those from the standard profile?), heading?
-' - simpler list for codelists with more than 1 code, three-column list when Defaults are used (Utvekslingsalias)
 ' TBD: codes with tagged values
 ' TBD: output info on associations if present
 ' TBD: zzzzzz
-' TBD: if tV SOSI_bildeAvModellelement (på pakker og klasser) -> Session.Output("image::"& tV &".png["& tV &"]")
-
+' TBD: if tV SOSI_bildeAvModellelement (på koder og egenskaper) -> Session.Output("image::"& tV &".png["& tV &"]")
 ' TBD: special handling of classes that have tV with names like FKB-A etc. and are subtypes of feature types
-
 ' TBD: write adoc and diagram files to a subfolder, ensure utf-8 in adoc (no &#229)
 '		==== «dataType» Matrikkelenhetreferanse
 '		Definisjon: Mulighet for &#229; koble matrikkelenhet til objekt i SSR for &#229; oppdatere bruksnavn i matrikkelen.
-
+' TBD: opprydding !!!
 '
+Dim imgfolder, imgparent
+Dim diagCounter
+
 '
 ' Project Browser Script main function
 Sub OnProjectBrowserScript()
@@ -45,7 +51,9 @@ Sub OnProjectBrowserScript()
 			Repository.EnsureOutputVisible "Script"
 			Repository.ClearOutput "Script"
             ' Code for when a package is selected
-            Dim thePackage As EA.Package
+			imgfolder ="img"
+			diagCounter = 0
+			Dim thePackage As EA.Package
 			set thePackage = Repository.GetTreeSelectedObject()
 			Call ListAsciiDoc(thePackage)
 
@@ -60,15 +68,13 @@ End Sub
 
 Sub ListAsciiDoc(thePackage)
 Dim imgFSO
-Dim imgfolder, imgparent
 Dim element As EA.Element
 dim tag as EA.TaggedValue
 Dim diag As EA.Diagram
 Dim projectclass As EA.Project
 set projectclass = Repository.GetProjectInterface()
-Dim diagCounter
-diagCounter = 0
-imgfolder ="img"
+
+
 	
 Session.Output("=== "&thePackage.Name&"")
 Session.Output("Definisjon: "&thePackage.Notes&"")
@@ -80,11 +86,13 @@ if thePackage.element.TaggedValues.Count > 0 then
 	Session.Output("|===")
 	for each tag in thePackage.element.TaggedValues
 		if tag.Value <> "" then	
-		'	Session.Output("|Tag: "&tag.Name&"")
-		'	Session.Output("|Verdi: "&tag.Value&"")
-			Session.Output("|"&tag.Name&"")
-			Session.Output("|"&tag.Value&"")
-			Session.Output(" ")				
+			if tag.Name <> "persistence" and tag.Name <> "SOSI_melding" then
+			'	Session.Output("|Tag: "&tag.Name&"")
+			'	Session.Output("|Verdi: "&tag.Value&"")
+				Session.Output("|"&tag.Name&"")
+				Session.Output("|"&tag.Value&"")
+				Session.Output(" ")			
+			end if
 		end if
 		if tag.Name = "SOSI_kortnavn" then	
 			imgfolder = tag.Value
@@ -96,7 +104,7 @@ end if
 '-----------------Diagram-----------------
 	Set imgFSO=CreateObject("Scripting.FileSystemObject")
 	imgparent = imgFSO.GetParentFolderName(Repository.ConnectionString())  & "\" & imgfolder
-	if true then				
+	if false then				
 		Session.Output(" DEBUG.")
 		Session.Output(" imgfolder: " & imgfolder  & "...")
 		Session.Output(" imgFSO.GetAbsolutePathName: " & imgFSO.GetAbsolutePathName("./")  & "...")
@@ -109,7 +117,14 @@ end if
 		imgFSO.CreateFolder imgparent
 	end if
 
-
+	for each tag in thePackage.element.TaggedValues
+		if tag.Name = "SOSI_bildeAvModellelement" and tag.Value <> "" then
+			diagCounter = diagCounter + 1
+			Session.Output("[caption=""Figur "&diagCounter&": "",title="&tag.Name&"]")
+		'	Session.Output("image::"&tag.Value&".png["&ThePackage.Name"."&tag.Name&"]")
+			Session.Output("image::"&tag.Value&".png["&tag.Value&"]")
+		end if
+	next
 
 For Each diag In thePackage.Diagrams
 	diagCounter = diagCounter + 1
@@ -206,12 +221,25 @@ if element.TaggedValues.Count > 0 then
 	Session.Output("|===")
 	for each tag in element.TaggedValues								
 		if tag.Value <> "" then	
-			Session.Output("|Tag: "&tag.Name&"")
-			Session.Output("|Verdi: "&tag.Value&"")
-			Session.Output(" ")				
+			if tag.Name <> "persistence" and tag.Name <> "SOSI_melding" then
+			'	Session.Output("|Tag: "&tag.Name&"")
+			'	Session.Output("|Verdi: "&tag.Value&"")
+				Session.Output("|"&tag.Name&"")
+				Session.Output("|"&tag.Value&"")
+				Session.Output(" ")			
+			end if
 		end if
 	next
 	Session.Output("|===")
+	
+	for each tag in element.TaggedValues								
+		if tag.Name = "SOSI_bildeAvModellelement" and tag.Value <> "" then
+			diagCounter = diagCounter + 1
+			Session.Output("[caption=""Figur "&diagCounter&": "",title="&tag.Name&"]")
+		'	Session.Output("image::"&tag.Value&".png["&ThePackage.Name"."&tag.Name&"]")
+			Session.Output("image::"&tag.Value&"["&tag.Value&"]")
+		end if
+	next
 end if
 
 if element.Attributes.Count > 0 then
@@ -274,12 +302,25 @@ if element.TaggedValues.Count > 0 then
 	Session.Output("|===")
 	for each tag in element.TaggedValues								
 		if tag.Value <> "" then	
-			Session.Output("|"&tag.Name&"")
-			Session.Output("|"&tag.Value&"")
-			Session.Output(" ")				
+			if tag.Name <> "persistence" and tag.Name <> "SOSI_melding" then
+			'	Session.Output("|Tag: "&tag.Name&"")
+			'	Session.Output("|Verdi: "&tag.Value&"")
+				Session.Output("|"&tag.Name&"")
+				Session.Output("|"&tag.Value&"")
+				Session.Output(" ")			
+			end if	
 		end if
 	next
 	Session.Output("|===")
+		
+	for each tag in element.TaggedValues								
+		if tag.Name = "SOSI_bildeAvModellelement" and tag.Value <> "" then
+			diagCounter = diagCounter + 1
+			Session.Output("[caption=""Figur "&diagCounter&": "",title="&tag.Name&"]")
+		'	Session.Output("image::"&tag.Value&".png["&ThePackage.Name"."&tag.Name&"]")
+			Session.Output("image::"&tag.Value&"["&tag.Value&"]")
+		end if
+	next
 end if
 if element.Attributes.Count > 0 then
 Session.Output("===== Koder")
