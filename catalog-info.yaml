@@ -1,0 +1,37 @@
+# nonk8s
+apiVersion: "backstage.io/v1alpha1"
+kind: "Component"
+metadata:
+  name: "UML-dokumentasjon-AsciiDoc-Script"
+  tags:
+  - "private"
+spec:
+  type: "service"
+  lifecycle: "production"
+  owner: "standardisering"
+---
+apiVersion: "backstage.io/v1alpha1"
+kind: "Group"
+metadata:
+  name: "security_champion_UML-dokumentasjon-AsciiDoc-Script"
+  title: "Security Champion UML-dokumentasjon-AsciiDoc-Script"
+spec:
+  type: "security_champion"
+  parent: "it_security_champions"
+  members:
+  - "toreJohnsen"
+  children:
+  - "resource:UML-dokumentasjon-AsciiDoc-Script"
+---
+apiVersion: "backstage.io/v1alpha1"
+kind: "Resource"
+metadata:
+  name: "UML-dokumentasjon-AsciiDoc-Script"
+  links:
+  - url: "https://github.com/kartverket/UML-dokumentasjon-AsciiDoc-Script"
+    title: "UML-dokumentasjon-AsciiDoc-Script på GitHub"
+spec:
+  type: "repo"
+  owner: "security_champion_UML-dokumentasjon-AsciiDoc-Script"
+  dependencyOf:
+  - "component:UML-dokumentasjon-AsciiDoc-Script"
